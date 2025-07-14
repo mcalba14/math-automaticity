@@ -10,6 +10,8 @@ use Filament\Forms\Form;
 use Filament\Tables\Table;
 use Filament\Resources\Resource;
 use Filament\Tables\Actions\Action;
+use Illuminate\Support\Facades\Auth;
+use App\Models\StudentActivityResult;
 use Filament\Tables\Columns\TextColumn;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
@@ -36,16 +38,23 @@ class LessonResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->recordUrl(false) //Disable clickable rows
+            ->modifyQueryUsing(function (Builder $query) {
+                $query->whereHas('activities');
+            })
             ->columns([
                 TextColumn::make('title'),
                 TextColumn::make('difficultyLevel.name')
                     ->label('Difficulty Level'),
                 TextColumn::make('items_count')
                     ->default(function(Model $record){
-                        return Activity::where('difficulty_level_id', $record['difficulty_level_id'])
+                        // dd($record);
+                        return Activity::where('lesson_id', $record['id'])->where('difficulty_level_id', $record['difficulty_level_id'])
                             ->get()
                             ->count();
                     })
+                    ->badge()
+                    ->color('success')
                     ->label('Item(s)'),
                 TextColumn::make('description'),
             ])
@@ -53,9 +62,22 @@ class LessonResource extends Resource
                 //
             ])
             ->actions([
-                Action::make('Take Exercises')
-                ->label('Take Activities')
-                ->color('warning')
+                Action::make('Start Activity')
+                ->label(fn(Lesson $record) =>
+                    StudentActivityResult::where('student_id', Auth::user()->student->id ?? null)
+                        ->where('lesson_id', $record->id)
+                        ->exists()
+                        ? 'Retake'
+                        : 'Start Activity'
+                )
+                ->icon(fn(Lesson $record) =>
+                    StudentActivityResult::where('student_id', Auth::user()->student->id ?? null)
+                        ->where('lesson_id', $record->id)
+                        ->exists()
+                        ? 'heroicon-o-arrow-path'
+                        : 'heroicon-o-rocket-launch')
+                ->button()
+                ->color('info')
                 ->url(
                     fn (Lesson $record): string => static::getUrl('start-activity', [
                         'record' => $record->id,

@@ -23,8 +23,8 @@ class StartActivity extends Page implements HasForms
     protected static string $view = 'filament.student.resources.lesson-resource.pages.start-activity';
 
     public array $questions = [];
-    public array $answeredQuestions = [];
-    public ?array $data = [];
+    public array $answeredQuestions = []; //
+    public ?array $data = []; //
     public bool $sessionFinished = false;
 
     public int $timeLeft = 0;
@@ -36,9 +36,12 @@ class StartActivity extends Page implements HasForms
     public array $attemptResults = [];
     public int $totalCorrect = 0;
     public $attemptId;
+    public $accuracy = 0;
+    public $lessonId;
 
     public function mount($record): void
     {
+        $this->lessonId = $record;
         $this->attempts = [];
         $this->attemptResults = [];
         $this->questionsTaken = [];
@@ -69,7 +72,9 @@ class StartActivity extends Page implements HasForms
     public function loadQuestion($record = null): void
     {
         $this->step++;
-        $query = Activity::query()->with('difficultyLevel');
+        $query = Activity::query()
+            ->with('difficultyLevel')
+            ->where('lesson_id', $this->lessonId);
         if ($record) {
             $query->where('lesson_id', $record);
             $this->totalQuestions = $query->where('lesson_id', $record)->count();
@@ -132,8 +137,9 @@ class StartActivity extends Page implements HasForms
                 ->send();
             $this->sessionFinished = true;
 
-            $percentage = $this->totalQuestions > 0
-            ? round(($this->totalCorrect / $this->totalQuestions) * 100, 2) : 0;
+            $this->accuracy = $this->totalQuestions > 0 ? ($this->totalCorrect / $this->totalQuestions) * 100 : 0;
+            $percentage = $this->totalQuestions > 0 ? round(($this->totalCorrect / $this->totalQuestions) * 100, 2) : 0;
+            // dd($this->accuracy, $percentage);
 
             foreach ($this->attempts as $attempt) {
                 StudentActivityAttempt::create($attempt);
@@ -141,9 +147,12 @@ class StartActivity extends Page implements HasForms
 
             StudentActivityResult::create([
                 'attempt_id' => $this->attemptId,
+                'student_id' => Auth::user()->student->id,
+                'lesson_id' => $this->questions['lesson_id'],
                 'questions_taken' => json_encode($this->questionsTaken), // <-- convert to string
                 'total_correct' => $this->totalCorrect,
                 'score' => $percentage,
+                'accuracy' => $this->accuracy,
             ]);
 
             // return;

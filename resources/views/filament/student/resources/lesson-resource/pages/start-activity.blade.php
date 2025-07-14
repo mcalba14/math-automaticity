@@ -1,7 +1,5 @@
 <x-filament-panels::page>
     <x-filament::section>
-        <pre>{!! print_r($this->attempts, true) !!}</pre>
-        <pre>{!! print_r($this->questionsTaken, true) !!}</pre>
         <x-slot name="description">
             <div class="flex items-center justify-between mb-4">
             @if (!$this->sessionFinished)

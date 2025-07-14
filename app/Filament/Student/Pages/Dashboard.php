@@ -9,4 +9,12 @@ class Dashboard extends Page
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
 
     protected static string $view = 'filament.student.pages.dashboard';
+
+    protected function getHeaderWidgets(): array
+    {
+        return [
+            \App\Filament\Student\Widgets\StatsOverview::class,
+        ];
+
+    }
 }

@@ -5,6 +5,8 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
         <title>Laravel</title>
+        <pre>{!! print_r($this->attempts, true) !!}</pre>
+        <pre>{!! print_r($this->questionsTaken, true) !!}</pre>
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
