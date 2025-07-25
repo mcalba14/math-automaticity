@@ -18,7 +18,7 @@ class StudentActivityResultResource extends Resource
 {
     protected static ?string $model = StudentActivityResult::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-document-check';
 
     protected static ?string $navigationLabel = 'Activity Results';
 
