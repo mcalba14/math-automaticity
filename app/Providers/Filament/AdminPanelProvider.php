@@ -16,6 +16,7 @@ use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
+use Leandrocfe\FilamentApexCharts\FilamentApexChartsPlugin;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Althinect\FilamentSpatieRolesPermissions\FilamentSpatieRolesPermissionsPlugin;
 
@@ -32,6 +33,10 @@ class AdminPanelProvider extends PanelProvider
             ->brandLogo(asset('images/math_fluency.png'))
             ->brandLogoHeight('6.2rem')
             ->favicon(asset('favicon.png'))
+            ->theme(asset('css/filament/admin/theme.css'))
+            ->plugins([
+                FilamentApexChartsPlugin::make()
+            ])
             ->colors([
                 'primary' => [
                     50 => '#f1f4f8',

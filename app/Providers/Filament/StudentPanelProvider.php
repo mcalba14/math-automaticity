@@ -38,6 +38,7 @@ class StudentPanelProvider extends PanelProvider
             ->brandLogo(asset('images/math_fluency.png'))
             ->brandLogoHeight('6.2rem')
             ->favicon(asset('favicon.png'))
+            ->theme(asset('css/filament/student/theme.css'))
             ->colors([
                 'primary' => [
                     50 => '#f1f4f8',

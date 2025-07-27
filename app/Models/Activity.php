@@ -13,10 +13,18 @@ class Activity extends Model
         'lesson_id',
         'difficulty_level_id',
         'question_text',
+        'choices',
         'answer',
         'type',
         'type',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'choices' => 'array',
+        ];
+    }
 
     public function lesson()
     {

@@ -11,7 +11,10 @@ use Filament\Forms\Form;
 use Filament\Tables\Table;
 use App\Models\DifficultyLevel;
 use Filament\Resources\Resource;
+use Filament\Forms\Components\Group;
+use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Textarea;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Forms\Components\TextInput;
@@ -30,44 +33,69 @@ class ActivityResource extends Resource
     public static function form(Form $form): Form
     {
         return $form
+            ->columns(1)
             ->schema([
-                ToggleButtons::make('difficulty_level_id')
-                    ->label('Difficulty Level')
-                    ->live()
-                    ->default(1)
-                    ->options(DifficultyLevel::query()->get()->pluck('name', 'id'))
-                    ->inline()->grouped()->required(),
+                Group::make()
+                    ->columns(3)
+                    ->schema([
+                        ToggleButtons::make('difficulty_level_id')
+                            ->label('Difficulty Level')
+                            ->live()
+                            ->default(1)
+                            ->options(DifficultyLevel::query()->get()->pluck('name', 'id'))
+                            ->inline()->grouped()->required(),
 
-                Select::make('lesson_id')
-                    ->label('Lesson')
-                    ->options(function(Get $get){
-                        return Lesson::query()
-                            ->where('difficulty_level_id', $get('difficulty_level_id'))
-                            ->pluck('title', 'id')
-                            ->toArray();
-                    })
-                    ->native(false)
-                    ->preload()
-                    ->searchable()
-                    ->required(),
+                        Select::make('lesson_id')
+                            ->label('Lesson')
+                            ->options(function(Get $get){
+                                return Lesson::query()
+                                    ->where('difficulty_level_id', $get('difficulty_level_id'))
+                                    ->pluck('title', 'id')
+                                    ->toArray();
+                            })
+                            ->native(false)
+                            ->preload()
+                            ->searchable()
+                            ->required(),
 
+                        Select::make('type')
+                            ->options([
+                                'multiple_choice' => 'Multiple Choice',
+                                'short_answer' => 'Short Answer',
+                                'true_false' => 'True/False',
+                            ])
+                            ->live()
+                            ->default('short_answer')
+                            ->native(false)
+                            ->required(),
+                    ]),
                 Textarea::make('question_text')
                     ->columnSpan('full')
                     ->label('Question')
                     ->required(),
+                
+                Repeater::make('choices')
+                    ->label('Answers')
+                    ->required()
+                    ->visible(fn(Get $get) => $get('type') == 'multiple_choice')
+                    ->schema([
+                        TextInput::make('choices')->required(),
+                    ]),
 
                 TextInput::make('answer')
+                    ->label('Correct Answer')
+                    ->visible(fn(Get $get) => $get('type') !== 'true_false')
                     ->required(),
 
-                Select::make('type')
+                Radio::make('answer')
+                    ->label('Correct Answer')
+                    ->visible(fn(Get $get) => $get('type') == 'true_false')
+                    ->required()
                     ->options([
-                        'multiple_choice' => 'Multiple Choice',
-                        'short_answer' => 'Short Answer',
-                        'true_false' => 'True/False',
-                    ])
-                    ->default('short_answer')
-                    ->native(false)
-                    ->required(),
+                        'true' => 'True',
+                        'false' => 'False',
+                    ]),
+
             ]);
     }
 

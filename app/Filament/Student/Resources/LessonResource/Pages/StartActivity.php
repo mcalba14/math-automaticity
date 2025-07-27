@@ -23,13 +23,13 @@ class StartActivity extends Page implements HasForms
     protected static string $view = 'filament.student.resources.lesson-resource.pages.start-activity';
 
     public array $questions = [];
-    public array $answeredQuestions = []; //
-    public ?array $data = []; //
+    public array $answeredQuestions = [];
+    public ?array $data = [];
     public bool $sessionFinished = false;
 
     public int $timeLeft = 0;
     public ?int $currentLimit = null;
-    public int $step = 0;   
+    public int $step = 0;
     public int $totalQuestions;
     public array $attempts = [];
     public array $questionsTaken = [];
@@ -58,11 +58,10 @@ class StartActivity extends Page implements HasForms
         if ($this->timeLeft > 0) {
             $this->timeLeft--;
         } else {
-            $this->submit(); // auto-submit on timeout
+            $this->submit();
         }
     }
 
-    // Convert MM:SS format to seconds
     function mmssToSeconds(string $mmss): int
     {
         [$minutes, $seconds] = explode(':', $mmss);
@@ -75,20 +74,22 @@ class StartActivity extends Page implements HasForms
         $query = Activity::query()
             ->with('difficultyLevel')
             ->where('lesson_id', $this->lessonId);
+
         if ($record) {
             $query->where('lesson_id', $record);
             $this->totalQuestions = $query->where('lesson_id', $record)->count();
         }
+
         if (!empty($this->answeredQuestions)) {
             $query->whereNotIn('id', $this->answeredQuestions);
         }
+
         $question = $query->inRandomOrder()->first();
 
         if ($question) {
             $this->questions = $question->toArray();
             $this->answeredQuestions[] = $this->questions['id'];
-            $this->data['answer'] = ''; // Reset answer for new question
-
+            $this->data['answer'] = '';
             $this->currentLimit = $this->mmssToSeconds($question->difficultyLevel->time_limit) ?? 30;
             $this->timeLeft = $this->currentLimit;
         } else {
@@ -98,13 +99,41 @@ class StartActivity extends Page implements HasForms
 
     public function form(Form $form): Form
     {
-        return $form
-            ->schema([
+        $questionType = $this->questions['type'] ?? null;
+
+        $schema = match ($questionType) {
+            'multiple_choice' => [
+                Forms\Components\Radio::make('answer')
+                    ->label('Your Answer')
+                    ->options(function () {
+                        $raw = $this->questions['choices'] ?? [];
+
+                        // Decode if it's a JSON string
+                        $decoded = is_string($raw) ? json_decode($raw, true) : $raw;
+
+                        return collect($decoded)
+                            ->pluck('choices')
+                            ->mapWithKeys(fn ($value) => [$value => $value])
+                            ->toArray();
+                    }),
+            ],
+
+            'true_false' => [
+                Forms\Components\Radio::make('answer')
+                    ->label('Your Answer')
+                    ->options([
+                        'true' => 'True',
+                        'false' => 'False',
+                    ]),
+            ],
+            default => [
                 Forms\Components\TextInput::make('answer')
                     ->label('Your Answer')
                     ->autofocus(),
-            ])
-            ->statePath('data');
+            ],
+        };
+
+        return $form->schema($schema)->statePath('data');
     }
 
     public function submit(): void
@@ -119,7 +148,6 @@ class StartActivity extends Page implements HasForms
                 'activity_id' => $this->questions['id'],
                 'student_answer' => $data['answer'] ?? 'null',
                 'is_correct' => $data['answer'] === $this->questions['answer'],
-                // 'time_taken' => $this->currentLimit - $this->timeLeft,
             ];
 
             $this->questionsTaken[] = $this->questions['id'];
@@ -127,19 +155,19 @@ class StartActivity extends Page implements HasForms
             if ($data['answer'] === $this->questions['answer']) {
                 $this->totalCorrect++;
             }
-
         }
-        if($this->step >= $this->totalQuestions) {
+
+        if ($this->step >= $this->totalQuestions) {
             Notification::make()
                 ->title('Session Complete')
                 ->body('You have answered all questions!')
                 ->success()
                 ->send();
+
             $this->sessionFinished = true;
 
             $this->accuracy = $this->totalQuestions > 0 ? ($this->totalCorrect / $this->totalQuestions) * 100 : 0;
-            $percentage = $this->totalQuestions > 0 ? round(($this->totalCorrect / $this->totalQuestions) * 100, 2) : 0;
-            // dd($this->accuracy, $percentage);
+            $percentage = round($this->accuracy, 2);
 
             foreach ($this->attempts as $attempt) {
                 StudentActivityAttempt::create($attempt);
@@ -149,13 +177,11 @@ class StartActivity extends Page implements HasForms
                 'attempt_id' => $this->attemptId,
                 'student_id' => Auth::user()->student->id,
                 'lesson_id' => $this->questions['lesson_id'],
-                'questions_taken' => json_encode($this->questionsTaken), // <-- convert to string
+                'questions_taken' => json_encode($this->questionsTaken),
                 'total_correct' => $this->totalCorrect,
                 'score' => $percentage,
                 'accuracy' => $this->accuracy,
             ]);
-
-            // return;
         }
 
         $this->loadQuestion();

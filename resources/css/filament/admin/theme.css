@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@tailwind variants;
+@import '../../../../vendor/filament/filament/resources/css/base.css';
+
+@config 'tailwind.config.js';
+
+body .fi-simple-main-ctn {
+    background-image: url('/images/math-bg.png') !important;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
