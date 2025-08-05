@@ -15,9 +15,9 @@ return new class extends Migration
             $table->id();
             $table->foreignId('lesson_id')->constrained()->onDelete('cascade');
             $table->foreignId('difficulty_level_id')->nullable()->constrained()->onDelete('set null');
-            $table->string('title');
-            $table->enum('type', ['drill', 'quiz']);
-            $table->integer('time_limit')->nullable(); // in seconds
+            $table->string('question_text');
+            $table->string('answer');
+            $table->enum('type', ['multiple_choice','short_answer','true_false']);
             $table->timestamps();
         });
     }
